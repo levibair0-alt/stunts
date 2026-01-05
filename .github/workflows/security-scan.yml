@@ -1,0 +1,171 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        if [ -f package.json ]; then
+          npm ci
+        else
+          echo "No package.json found, skipping npm install"
+        fi
+
+    - name: Run npm audit
+      run: |
+        if [ -f package.json ]; then
+          npm audit --audit-level=moderate
+        else
+          echo "No package.json found, skipping npm audit"
+        fi
+      continue-on-error: true
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        exit-code: '0'  # Don't fail the job if vulnerabilities are found
+      continue-on-error: true
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && hashFiles('trivy-results.sarif') != ''
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Check for secrets with TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check for dependencies
+      id: check-deps
+      run: |
+        if [ -f package-lock.json ] && [ -s package-lock.json ]; then
+          # Check if there are actual dependencies beyond the root package
+          deps_count=$(jq '.packages | keys | length' package-lock.json)
+          if [ "$deps_count" -gt 1 ]; then
+            echo "has-deps=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-deps=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "has-deps=false" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: Dependency Review
+      if: steps.check-deps.outputs.has-deps == 'true'
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+        
+    - name: Skip dependency review
+      if: steps.check-deps.outputs.has-deps == 'false'
+      run: echo "✅ No dependencies to review - skipping dependency review"
+
+  compliance-check:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for required files
+      run: |
+        echo "Checking for required compliance files..."
+        
+        # Check for required files
+        required_files=("LICENSE" "SECURITY.md" "CONTRIBUTING.md" "README.md")
+        missing_files=()
+        
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            missing_files+=("$file")
+          fi
+        done
+        
+        if [ ${#missing_files[@]} -ne 0 ]; then
+          echo "❌ Missing required files: ${missing_files[*]}"
+          exit 1
+        else
+          echo "✅ All required compliance files are present"
+        fi
+
+    - name: Validate README structure
+      run: |
+        echo "Validating README structure..."
+        
+        # Check if README has required sections
+        required_sections=("Overview" "Getting Started" "License" "Security")
+        missing_sections=()
+        
+        for section in "${required_sections[@]}"; do
+          if ! grep -q "$section" README.md; then
+            missing_sections+=("$section")
+          fi
+        done
+        
+        if [ ${#missing_sections[@]} -ne 0 ]; then
+          echo "❌ README missing required sections: ${missing_sections[*]}"
+          exit 1
+        else
+          echo "✅ README has all required sections"
+        fi
+
+    - name: Check license compatibility
+      run: |
+        echo "Checking license compatibility..."
+        
+        if [ -f LICENSE ]; then
+          if grep -q "MIT\|Apache\|BSD" LICENSE; then
+            echo "✅ License is compatible with corporate standards"
+          else
+            echo "⚠️ License may need review for corporate compliance"
+          fi
+        else
+          echo "❌ No LICENSE file found"
+          exit 1
+        fi
