@@ -1,0 +1,33 @@
+{
+  "name": "stunts",
+  "version": "1.0.0",
+  "description": "A development project focused on building innovative solutions and prototypes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "echo \"No linting configured yet\"",
+    "security-audit": "npm audit",
+    "start": "echo \"No start script configured yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/levibair0-alt/stunts.git"
+  },
+  "keywords": [
+    "development",
+    "prototype",
+    "innovation"
+  ],
+  "author": "levibair0-alt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/levibair0-alt/stunts/issues"
+  },
+  "homepage": "https://github.com/levibair0-alt/stunts#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
