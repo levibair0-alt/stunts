@@ -1,0 +1,32 @@
+{
+  "title": "Runs",
+  "properties": {
+    "Run ID": {
+      "title": {}
+    },
+    "Timestamp": {
+      "type": "date"
+    },
+    "Actions": {
+      "type": "rich_text"
+    },
+    "Errors": {
+      "type": "rich_text"
+    },
+    "Duration": {
+      "type": "number"
+    },
+    "Status": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "Started", "color": "blue"},
+          {"name": "Completed", "color": "green"},
+          {"name": "Failed", "color": "red"},
+          {"name": "Cancelled", "color": "gray"}
+        ]
+      }
+    }
+  },
+  "description": "Per-project run tracking"
+}

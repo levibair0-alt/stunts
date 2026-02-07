@@ -1,0 +1,19 @@
+# Agent-specific settings
+
+planner:
+  model: "gpt-4"
+  timeout: 60
+  max_retries: 3
+  temperature: 0.7
+  max_tokens: 2000
+
+executor:
+  timeout: 300
+  max_retries: 2
+  parallel_tasks: false
+
+commit_agent:
+  timeout: 30
+  max_retries: 3
+  max_files_per_commit: 50
+  require_signoff: false

@@ -1,0 +1,41 @@
+# Per-project permissions
+
+stunts:
+  auto_commit_allowed: true
+  auto_merge_allowed: false
+  require_tests: false
+  max_branches: 10
+  allowed_file_types: ["*"]
+  blocked_files: ["*.secret", "*.key", "*.pem"]
+
+project2:
+  auto_commit_allowed: false
+  auto_merge_allowed: false
+  require_tests: true
+  max_branches: 5
+  allowed_file_types: [".py", ".js", ".json"]
+  blocked_files: ["*.secret", "*.key", "*.pem"]
+
+project3:
+  auto_commit_allowed: false
+  auto_merge_allowed: false
+  require_tests: false
+  max_branches: 10
+  allowed_file_types: ["*"]
+  blocked_files: ["*.secret", "*.key", "*.pem"]
+
+project4:
+  auto_commit_allowed: false
+  auto_merge_allowed: false
+  require_tests: false
+  max_branches: 10
+  allowed_file_types: ["*"]
+  blocked_files: ["*.secret", "*.key", "*.pem"]
+
+project5:
+  auto_commit_allowed: false
+  auto_merge_allowed: false
+  require_tests: false
+  max_branches: 10
+  allowed_file_types: ["*"]
+  blocked_files: ["*.secret", "*.key", "*.pem"]

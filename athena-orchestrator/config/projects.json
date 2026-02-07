@@ -1,0 +1,52 @@
+[
+  {
+    "name": "stunts",
+    "repo": ".",
+    "branch": "main",
+    "run_frequency": 300,
+    "auto_commit": true,
+    "notion_db_tasks": "",
+    "notion_db_runs": "",
+    "notion_db_docs": ""
+  },
+  {
+    "name": "project2",
+    "repo": "",
+    "branch": "main",
+    "run_frequency": 300,
+    "auto_commit": false,
+    "notion_db_tasks": "",
+    "notion_db_runs": "",
+    "notion_db_docs": ""
+  },
+  {
+    "name": "project3",
+    "repo": "",
+    "branch": "main",
+    "run_frequency": 300,
+    "auto_commit": false,
+    "notion_db_tasks": "",
+    "notion_db_runs": "",
+    "notion_db_docs": ""
+  },
+  {
+    "name": "project4",
+    "repo": "",
+    "branch": "main",
+    "run_frequency": 300,
+    "auto_commit": false,
+    "notion_db_tasks": "",
+    "notion_db_runs": "",
+    "notion_db_docs": ""
+  },
+  {
+    "name": "project5",
+    "repo": "",
+    "branch": "main",
+    "run_frequency": 300,
+    "auto_commit": false,
+    "notion_db_tasks": "",
+    "notion_db_runs": "",
+    "notion_db_docs": ""
+  }
+]

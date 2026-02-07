@@ -1,0 +1,38 @@
+{
+  "title": "Tasks",
+  "properties": {
+    "Task Name": {
+      "title": {}
+    },
+    "Status": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "To Do", "color": "gray"},
+          {"name": "In Progress", "color": "blue"},
+          {"name": "Completed", "color": "green"},
+          {"name": "Blocked", "color": "red"}
+        ]
+      }
+    },
+    "Branch": {
+      "type": "rich_text"
+    },
+    "Commit": {
+      "type": "rich_text"
+    },
+    "Result": {
+      "type": "rich_text"
+    },
+    "Logs": {
+      "type": "rich_text"
+    },
+    "Created": {
+      "type": "date"
+    },
+    "Completed": {
+      "type": "date"
+    }
+  },
+  "description": "Per-project task tracking"
+}

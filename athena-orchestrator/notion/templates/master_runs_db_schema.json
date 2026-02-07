@@ -1,0 +1,41 @@
+{
+  "title": "Global Runs",
+  "properties": {
+    "Run ID": {
+      "title": {}
+    },
+    "Project": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "stunts", "color": "blue"},
+          {"name": "project2", "color": "green"},
+          {"name": "project3", "color": "yellow"},
+          {"name": "project4", "color": "orange"},
+          {"name": "project5", "color": "purple"}
+        ]
+      }
+    },
+    "Timestamp": {
+      "type": "date"
+    },
+    "Status": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "Started", "color": "blue"},
+          {"name": "Completed", "color": "green"},
+          {"name": "Failed", "color": "red"},
+          {"name": "Blocked", "color": "gray"}
+        ]
+      }
+    },
+    "Actions": {
+      "type": "rich_text"
+    },
+    "Errors": {
+      "type": "rich_text"
+    }
+  },
+  "description": "Global runs tracking across all projects"
+}

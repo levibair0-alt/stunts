@@ -1,0 +1,31 @@
+{
+  "title": "Projects",
+  "properties": {
+    "Project Name": {
+      "title": {}
+    },
+    "Repo Path": {
+      "type": "rich_text"
+    },
+    "Status": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "Active", "color": "green"},
+          {"name": "Inactive", "color": "red"},
+          {"name": "Archived", "color": "gray"}
+        ]
+      }
+    },
+    "Last Run": {
+      "type": "date"
+    },
+    "Auto-Commit": {
+      "type": "checkbox"
+    },
+    "Branch Prefix": {
+      "type": "rich_text"
+    }
+  },
+  "description": "Orchestrator registry - tracks all managed projects"
+}

@@ -1,0 +1,19 @@
+# System-wide guardrails - MUST be active on first run
+# Agents will refuse to act if these aren't loaded
+
+max_commits_per_hour: 20
+branch_prefix: "task/"
+auto_merge: false
+require_tests: false
+log_level: INFO
+default_run_frequency: 300
+
+# Safety settings
+dry_run: false
+require_human_approval: false
+max_branches_per_project: 10
+
+# Rate limiting
+api_timeout: 30
+max_retries: 3
+retry_delay: 5

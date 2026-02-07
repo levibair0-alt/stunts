@@ -1,0 +1,40 @@
+{
+  "title": "Docs",
+  "properties": {
+    "Title": {
+      "title": {}
+    },
+    "Type": {
+      "type": "select",
+      "select": {
+        "options": [
+          {"name": "Documentation", "color": "blue"},
+          {"name": "Design", "color": "green"},
+          {"name": "Architecture", "color": "yellow"},
+          {"name": "Note", "color": "gray"}
+        ]
+      }
+    },
+    "Content": {
+      "type": "rich_text"
+    },
+    "Tags": {
+      "type": "multi_select",
+      "multi_select": {
+        "options": [
+          {"name": "API", "color": "blue"},
+          {"name": "UI", "color": "green"},
+          {"name": "Backend", "color": "orange"},
+          {"name": "DevOps", "color": "red"}
+        ]
+      }
+    },
+    "Created": {
+      "type": "date"
+    },
+    "Last Modified": {
+      "type": "date"
+    }
+  },
+  "description": "Per-project documentation tracking"
+}
