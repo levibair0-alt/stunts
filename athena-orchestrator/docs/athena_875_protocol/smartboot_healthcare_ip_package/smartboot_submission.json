@@ -1,0 +1,30 @@
+{
+  "submission_id": "SUB-2026-875-SB001",
+  "title": "SmartBoot Healthcare IP Package",
+  "description": "SmartBoot is a MedTech platform for clinical gait analysis and remote patient monitoring. The package combines smart footwear sensors, embedded firmware, and cloud analytics to detect mobility anomalies, support fall-risk scoring, and integrate with hospital EHR systems using HL7/FHIR workflows. It is designed for hospitals, rehabilitation clinics, and clinical research teams seeking HIPAA-ready patient mobility intelligence.",
+  "submitter_info": {
+    "name": "Avery Lin",
+    "email": "avery.lin@smartboot.health",
+    "organization": "SmartBoot Labs"
+  },
+  "tags": [
+    "healthcare",
+    "medtech",
+    "clinical",
+    "patient monitoring",
+    "gait analysis",
+    "rehabilitation",
+    "remote monitoring",
+    "EHR"
+  ],
+  "website_url": "https://smartboot.health",
+  "additional_context": "Includes sensor hardware, analytics, and clinician dashboard with HIPAA-ready workflows. ATHENA 875 handshake verification required: ATHENA-875-VERIFIED.",
+  "metadata": {
+    "submission_date": "2026-02-09T12:15:00Z",
+    "source": "athena_875_protocol",
+    "priority": "standard",
+    "protocol_version": "1.0.0",
+    "package_id": "SB-HC-IP-2026",
+    "handshake_verification": "ATHENA-875-VERIFIED"
+  }
+}
