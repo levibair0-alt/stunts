@@ -1,0 +1,198 @@
+# ATHENA 875 Protocol - Submission Schema Template
+# Purpose: Standardized format for marketplace submission data
+# Protocol Version: 1.0.0
+#
+# This template defines the expected structure for submissions to be classified
+# by the ATHENA 875 Protocol classifier
+
+submission_schema:
+  version: "1.0.0"
+  protocol: "ATHENA-875"
+  
+  required_fields:
+    - submission_id
+    - title
+    - description
+    - submitter_info
+  
+  optional_fields:
+    - tags
+    - website_url
+    - additional_context
+    - metadata
+
+# Template structure with field descriptions
+template:
+  submission_id:
+    type: string
+    description: "Unique identifier for the submission"
+    example: "SUB-2026-001234"
+    required: true
+  
+  title:
+    type: string
+    description: "Short title or name of the submission"
+    max_length: 200
+    example: "Cloud-based Inventory Management System"
+    required: true
+  
+  description:
+    type: string
+    description: "Detailed description of the product/service/project"
+    max_length: 5000
+    example: "A comprehensive SaaS platform for real-time inventory tracking..."
+    required: true
+  
+  submitter_info:
+    type: object
+    description: "Information about the submitter"
+    required: true
+    fields:
+      name:
+        type: string
+        required: true
+      email:
+        type: string
+        required: true
+      organization:
+        type: string
+        required: false
+  
+  tags:
+    type: array
+    description: "User-provided tags or keywords"
+    items_type: string
+    example: ["saas", "inventory", "cloud", "analytics"]
+    required: false
+  
+  website_url:
+    type: string
+    description: "Website or landing page URL"
+    example: "https://example.com"
+    required: false
+  
+  additional_context:
+    type: string
+    description: "Any additional context or notes"
+    max_length: 2000
+    required: false
+  
+  metadata:
+    type: object
+    description: "System-generated or additional metadata"
+    required: false
+    fields:
+      submission_date:
+        type: string
+        format: "ISO-8601"
+      source:
+        type: string
+      priority:
+        type: string
+
+# Example submission (valid format)
+example_submission:
+  submission_id: "SUB-2026-001234"
+  title: "MediTrack - Patient Management Platform"
+  description: |
+    MediTrack is a comprehensive healthcare platform designed for hospitals
+    and clinics to manage patient records, appointments, and medical histories.
+    Features include HIPAA-compliant storage, telemedicine integration,
+    electronic health records (EHR), and real-time patient monitoring dashboards.
+  submitter_info:
+    name: "John Smith"
+    email: "john.smith@meditrack.com"
+    organization: "MediTrack Inc."
+  tags:
+    - healthcare
+    - patient management
+    - telemedicine
+    - EHR
+  website_url: "https://meditrack.health"
+  additional_context: "Currently serving 50+ medical facilities across North America"
+  metadata:
+    submission_date: "2026-02-09T10:30:00Z"
+    source: "web_form"
+    priority: "standard"
+
+# Validation rules
+validation_rules:
+  submission_id:
+    pattern: "^SUB-[0-9]{4}-[0-9]{6}$"
+    error_message: "Invalid submission ID format"
+  
+  title:
+    min_length: 5
+    max_length: 200
+    error_message: "Title must be between 5 and 200 characters"
+  
+  description:
+    min_length: 50
+    max_length: 5000
+    error_message: "Description must be between 50 and 5000 characters"
+  
+  email:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    error_message: "Invalid email format"
+  
+  website_url:
+    pattern: "^https?://.*"
+    error_message: "URL must start with http:// or https://"
+
+# Classification output format
+classification_output_schema:
+  classified_industry:
+    type: string
+    description: "The determined industry category"
+    example: "healthcare"
+  
+  industry_id:
+    type: integer
+    description: "Numeric ID of the industry"
+    example: 3
+  
+  confidence_score:
+    type: float
+    description: "Confidence score for the classification"
+    range: [0.0, 1.0]
+    example: 0.87
+  
+  classification_score:
+    type: integer
+    description: "Raw classification score (must meet min_score threshold)"
+    example: 8
+  
+  margin:
+    type: float
+    description: "Score margin between top and second choice (must meet min_margin)"
+    example: 3.5
+  
+  meets_thresholds:
+    type: boolean
+    description: "Whether classification meets min_score and min_margin requirements"
+    example: true
+  
+  all_industry_scores:
+    type: object
+    description: "Scores for all industries evaluated"
+    example:
+      healthcare: 8.5
+      technology: 5.0
+      professional_services: 2.0
+  
+  matched_keywords:
+    type: array
+    description: "Keywords that matched from the taxonomy"
+    items_type: string
+    example: ["healthcare", "patient", "medical", "clinical"]
+  
+  protocol_version:
+    type: string
+    description: "ATHENA 875 protocol version used"
+    example: "1.0.0"
+  
+  timestamp:
+    type: string
+    format: "ISO-8601"
+    description: "Classification timestamp"
+    example: "2026-02-09T10:35:00Z"

@@ -37,6 +37,7 @@ stunts/
 - 📝 **Notion workspace model** - Master DB + per-project DBs
 - 🔄 **Git automation** - Auto branch, commit, push with safety checks
 - ⚡ **Continuous runner** - Poll and process tasks automatically
+- 🎯 **ATHENA 875 Classifier** - 10-industry submission classifier with deterministic scoring
 
 ### Documentation
 

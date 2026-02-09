@@ -16,25 +16,30 @@ Athena Orchestrator is your **project operating system** - a centralized brain t
 ```
 athena-orchestrator/
  config/               # Configuration & guardrails
-   ├── projects.json      # Project registry (stunts as #1)
-   ├── agents.yaml        # Agent-specific settings
-   ├── permissions.yaml   # Per-project permissions
-   └── settings.yaml     # System-wide guardrails
+   ├── projects.json              # Project registry (stunts as #1)
+   ├── agents.yaml                # Agent-specific settings
+   ├── permissions.yaml           # Per-project permissions
+   ├── settings.yaml              # System-wide guardrails
+   └── athena_875_taxonomy.yaml   # ATHENA 875 industry taxonomy
  agents/               # AI agents with safety checks
-   ├── planner_agent.py   # Task planning (OpenAI integration point)
-   ├── executor_agent.py  # Task execution with permissions
-   └── commit_agent.py   # Git commits with rate limiting
+   ├── planner_agent.py           # Task planning (OpenAI integration point)
+   ├── executor_agent.py          # Task execution with permissions
+   ├── commit_agent.py            # Git commits with rate limiting
+   └── athena_875_classifier.py   # ATHENA 875 submission classifier
  notion/               # Notion integration
-   ├── notion_client.py   # Master DB + per-project DB support
-   └── templates/        # Database schemas (5 JSON files)
+   ├── notion_client.py           # Master DB + per-project DB support
+   └── templates/                 # Database schemas (5 JSON files)
  cto/                  # CTO.new adapter
-   └── connector.py       # Clean execution adapter (stub)
+   └── connector.py               # Clean execution adapter (stub)
  git/                  # Git operations
-   └── git_manager.py     # Branch, commit, push with prefix support
+   └── git_manager.py             # Branch, commit, push with prefix support
  runner/               # Continuous task processing
-   └── main_loop.py      # Main execution loop
+   └── main_loop.py               # Main execution loop
  templates/            # Standardized formats
-    └── task_output_format.json
+   ├── task_output_format.json
+   └── submission_schema.yaml     # ATHENA 875 submission format
+ docs/                 # Documentation
+   └── ATHENA_875_CLASSIFIER.md   # Classifier documentation
 ```
 
 ## Setup
@@ -148,6 +153,55 @@ python runner/main_loop.py
 4. **Commit Agent** → Commits changes (if auto_commit enabled)
 5. **Notion** → Logs run to Global Runs + Project Runs DBs
 
+## ATHENA 875 Protocol - Submission Classifier
+
+The orchestrator includes an **ATHENA 875 Protocol-compliant submission classifier** for categorizing marketplace submissions into 10 industry categories.
+
+### Quick Start
+
+```bash
+cd athena-orchestrator
+python agents/athena_875_classifier.py
+```
+
+### Usage Example
+
+```python
+from agents.athena_875_classifier import Athena875Classifier
+
+# Initialize classifier
+classifier = Athena875Classifier(config_path="./config")
+
+# Prepare submission
+submission = {
+    'title': 'MediTrack - Patient Management Platform',
+    'description': '''Comprehensive healthcare platform for hospitals and clinics
+    to manage patient records, appointments, and medical histories.''',
+    'tags': ['healthcare', 'telemedicine', 'EHR'],
+    'website_url': 'https://meditrack.health'
+}
+
+# Classify
+result = classifier.classify_submission(submission)
+
+if result.meets_thresholds:
+    print(f"Industry: {classifier.get_industry_label(result.classified_industry)}")
+    print(f"Confidence: {result.confidence_score}")
+    print(f"Score: {result.classification_score}")
+```
+
+### Features
+
+- ✅ **10 Industry Categories**: Technology, Finance, Healthcare, Education, Retail, Manufacturing, Media, Real Estate, Transportation, Professional Services
+- ✅ **Deterministic Scoring**: Configurable keyword weights and thresholds
+- ✅ **Confidence Metrics**: min_score=3, min_margin=1 (configurable)
+- ✅ **Handshake Verification**: Protocol compliance checks
+- ✅ **YAML Taxonomy**: Easy-to-update configuration without code changes
+
+### Documentation
+
+Full classifier documentation: [docs/ATHENA_875_CLASSIFIER.md](docs/ATHENA_875_CLASSIFIER.md)
+
 ## Testing
 
 Test with one project (stunts) before adding others:
@@ -162,6 +216,9 @@ python agents/executor_agent.py
 
 # Test commit agent
 python agents/commit_agent.py
+
+# Test ATHENA 875 classifier
+python agents/athena_875_classifier.py
 
 # Test full loop
 python runner/main_loop.py
