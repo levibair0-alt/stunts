@@ -1,0 +1,386 @@
+# ATHENA 875 Protocol - Industry Taxonomy Configuration
+# Purpose: Define 10-industry marketplace categories with deterministic scoring rules
+# Protocol Version: 1.0.0
+# Compliance: ATHENA-875-2026
+#
+# LEDGER NOTE: Initial taxonomy structure created 2026-02-09
+# RISK: Changes to industry keywords may affect classification accuracy across system
+
+protocol:
+  name: "ATHENA 875"
+  version: "1.0.0"
+  compliance_date: "2026-02-09"
+  handshake_required: true
+  verification_code: "ATHENA-875-VERIFIED"
+
+classification:
+  min_score: 3
+  min_margin: 1
+  confidence_threshold: 0.65
+
+industries:
+  technology:
+    id: 1
+    label: "Technology & Software"
+    description: "Software development, IT services, cloud computing, SaaS"
+    keywords:
+      primary:
+        - software
+        - technology
+        - cloud
+        - saas
+        - api
+        - platform
+        - development
+        - programming
+        - infrastructure
+        - devops
+      secondary:
+        - app
+        - application
+        - system
+        - server
+        - database
+        - framework
+        - code
+        - automation
+        - integration
+        - microservices
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  finance:
+    id: 2
+    label: "Finance & Banking"
+    description: "Banking, investments, fintech, payments, financial services"
+    keywords:
+      primary:
+        - finance
+        - banking
+        - payment
+        - transaction
+        - investment
+        - fintech
+        - lending
+        - credit
+        - trading
+        - cryptocurrency
+      secondary:
+        - money
+        - currency
+        - wallet
+        - exchange
+        - portfolio
+        - account
+        - capital
+        - fund
+        - insurance
+        - wealth
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  healthcare:
+    id: 3
+    label: "Healthcare & Medical"
+    description: "Medical services, health tech, pharmaceuticals, wellness"
+    keywords:
+      primary:
+        - healthcare
+        - medical
+        - health
+        - clinical
+        - patient
+        - hospital
+        - pharmaceutical
+        - telemedicine
+        - diagnosis
+        - treatment
+      secondary:
+        - doctor
+        - nurse
+        - medicine
+        - therapy
+        - wellness
+        - fitness
+        - mental health
+        - nutrition
+        - surgery
+        - device
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  education:
+    id: 4
+    label: "Education & Training"
+    description: "Educational services, e-learning, training, academic institutions"
+    keywords:
+      primary:
+        - education
+        - learning
+        - training
+        - teaching
+        - course
+        - university
+        - school
+        - academy
+        - elearning
+        - edtech
+      secondary:
+        - student
+        - curriculum
+        - classroom
+        - instruction
+        - tutor
+        - certification
+        - degree
+        - study
+        - academic
+        - knowledge
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  retail:
+    id: 5
+    label: "Retail & E-commerce"
+    description: "Online retail, e-commerce platforms, consumer goods, marketplaces"
+    keywords:
+      primary:
+        - retail
+        - ecommerce
+        - shopping
+        - marketplace
+        - store
+        - merchant
+        - product
+        - inventory
+        - fulfillment
+        - commerce
+      secondary:
+        - cart
+        - checkout
+        - order
+        - shipping
+        - catalog
+        - customer
+        - sales
+        - purchase
+        - vendor
+        - consumer
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  manufacturing:
+    id: 6
+    label: "Manufacturing & Industry"
+    description: "Industrial production, supply chain, logistics, manufacturing"
+    keywords:
+      primary:
+        - manufacturing
+        - production
+        - factory
+        - industrial
+        - supply chain
+        - logistics
+        - warehouse
+        - assembly
+        - fabrication
+        - automation
+      secondary:
+        - machinery
+        - equipment
+        - quality control
+        - inventory
+        - distribution
+        - procurement
+        - material
+        - process
+        - operations
+        - maintenance
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  media:
+    id: 7
+    label: "Media & Entertainment"
+    description: "Content creation, streaming, gaming, publishing, social media"
+    keywords:
+      primary:
+        - media
+        - entertainment
+        - content
+        - streaming
+        - video
+        - gaming
+        - publishing
+        - broadcast
+        - social media
+        - creative
+      secondary:
+        - music
+        - film
+        - podcast
+        - news
+        - article
+        - channel
+        - creator
+        - audience
+        - subscriber
+        - platform
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  real_estate:
+    id: 8
+    label: "Real Estate & Property"
+    description: "Property management, real estate services, construction, housing"
+    keywords:
+      primary:
+        - real estate
+        - property
+        - housing
+        - construction
+        - building
+        - apartment
+        - commercial property
+        - residential
+        - lease
+        - mortgage
+      secondary:
+        - landlord
+        - tenant
+        - rent
+        - listing
+        - broker
+        - agent
+        - development
+        - zoning
+        - renovation
+        - inspection
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  transportation:
+    id: 9
+    label: "Transportation & Logistics"
+    description: "Transport services, delivery, mobility, fleet management"
+    keywords:
+      primary:
+        - transportation
+        - logistics
+        - delivery
+        - shipping
+        - fleet
+        - mobility
+        - vehicle
+        - route
+        - freight
+        - carrier
+      secondary:
+        - truck
+        - driver
+        - dispatch
+        - tracking
+        - cargo
+        - transit
+        - courier
+        - warehouse
+        - distribution
+        - supply
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+  professional_services:
+    id: 10
+    label: "Professional Services"
+    description: "Consulting, legal, accounting, HR, business services"
+    keywords:
+      primary:
+        - consulting
+        - legal
+        - accounting
+        - human resources
+        - advisory
+        - professional services
+        - compliance
+        - audit
+        - tax
+        - recruitment
+      secondary:
+        - lawyer
+        - accountant
+        - consultant
+        - advisor
+        - hr
+        - payroll
+        - contract
+        - regulation
+        - hiring
+        - business services
+    scoring:
+      primary_weight: 2.0
+      secondary_weight: 1.0
+      domain_bonus: 1.5
+
+# Domain patterns for bonus scoring
+domain_patterns:
+  technology:
+    - ".io"
+    - ".dev"
+    - ".tech"
+    - ".ai"
+    - ".app"
+  finance:
+    - "bank"
+    - "pay"
+    - "fin"
+    - "capital"
+  healthcare:
+    - "health"
+    - "med"
+    - "care"
+    - "clinic"
+  education:
+    - "edu"
+    - "learn"
+    - "academy"
+  retail:
+    - "shop"
+    - "store"
+    - "buy"
+  manufacturing:
+    - "mfg"
+    - "industrial"
+  media:
+    - "media"
+    - "stream"
+    - "studio"
+  real_estate:
+    - "realty"
+    - "properties"
+    - "homes"
+  transportation:
+    - "logistics"
+    - "freight"
+    - "transport"
+  professional_services:
+    - "consulting"
+    - "legal"
+    - "advisory"
