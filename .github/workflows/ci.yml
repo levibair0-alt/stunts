@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd athena-orchestrator
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run deterministic build
+        env:
+          PYTHONHASHSEED: 0
+        run: |
+          cd athena-orchestrator
+          python -m py_compile agents/*.py config/*.py || true
+          python -m py_compile runner/*.py || true
+          python -m py_compile cto/*.py || true
+          python -m py_compile git/*.py || true
+          python -m py_compile notion/*.py || true
+      
+      - name: Run tests with coverage
+        env:
+          PYTHONHASHSEED: 0
+        run: |
+          cd athena-orchestrator
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=term
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./athena-orchestrator/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true

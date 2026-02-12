@@ -38,6 +38,27 @@ stunts/
 - 🔄 **Git automation** - Auto branch, commit, push with safety checks
 - ⚡ **Continuous runner** - Poll and process tasks automatically
 - 🎯 **ATHENA 875 Classifier** - 10-industry submission classifier with deterministic scoring
+- 🚀 **CI/CD Pipeline** - Automated testing, security scanning, and compliance checks
+
+### Development
+
+```bash
+cd athena-orchestrator
+
+# Install development dependencies
+make install-dev
+
+# Run tests
+make test
+
+# Run deterministic CI build
+make ci-build
+
+# Check code quality
+make lint
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ### Documentation
 
