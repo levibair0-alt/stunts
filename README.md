@@ -28,6 +28,11 @@ stunts/
     ├── git/                  # Git operations automation
     ├── runner/               # Continuous task processing
     └── templates/            # Standardized formats
+ mlstudio/               ← Chat export converter toolkit
+    ├── convert_chat_export.py  # Main conversion script
+    ├── chatgpt_parser.py       # ChatGPT format parser
+    ├── examples/               # Sample export files
+    └── outputs/                # Generated Markdown files
 ```
 
 ### Key Features
@@ -74,6 +79,35 @@ Full documentation: [athena-orchestrator/README.md](athena-orchestrator/README.m
 - [ ] Connect CTO.new executor
 - [ ] Test with stunts project
 - [ ] Scale to 5 projects
+
+---
+
+## 💬 MLStudio - Chat Export Converter
+
+A Python toolkit for converting AI chat exports into readable Markdown documents.
+
+### Quick Start
+
+```bash
+cd mlstudio
+python convert_chat_export.py examples/chatgpt_example.json
+```
+
+### Features
+
+- 📄 **ChatGPT Support** - Convert ChatGPT conversation exports to Markdown
+- 🎨 **Clean Formatting** - Preserves code blocks, timestamps, and message structure
+- 🔧 **Extensible** - Designed to support Claude, Gemini, and other chat services
+- 📁 **Organized Output** - Auto-generated filenames in dedicated `outputs/` directory
+
+### Exporting from ChatGPT
+
+1. Go to ChatGPT Settings → Data controls
+2. Click "Export data"
+3. Download and extract `conversations.json`
+4. Run: `python convert_chat_export.py conversations.json`
+
+Full documentation: [mlstudio/README.md](mlstudio/README.md)
 
 ---
 
