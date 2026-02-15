@@ -424,6 +424,8 @@ class TestDataPersistence:
         # Check that files were created
         assert os.path.exists(os.path.join(self.data_path, 'patterns.json'))
         assert os.path.exists(os.path.join(self.data_path, 'execution_history.json'))
+        assert os.path.exists(os.path.join(self.data_path, 'optimizations.json'))
+        assert os.path.exists(os.path.join(self.data_path, 'cross_project_knowledge.json'))
     
     def test_persistence_disabled(self):
         """Test that persistence is skipped when disabled"""

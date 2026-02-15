@@ -222,6 +222,7 @@ The system automatically persists:
 ./data/reflection/
 ├── patterns.json
 ├── execution_history.json
+├── optimizations.json
 └── cross_project_knowledge.json
 ```
 
