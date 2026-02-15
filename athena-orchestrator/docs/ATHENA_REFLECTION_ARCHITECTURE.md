@@ -334,6 +334,37 @@ All insights should have confidence metrics to guide user trust.
 
 ---
 
+### ADR-011: Division by Zero Protection
+
+**Context**  
+The `_optimize_duration` method calculates percentage improvement using historical average as denominator, which could be zero.
+
+**Decision**  
+- Add explicit check for `historical_avg <= 0` before division
+- Skip optimization generation when insufficient historical data
+- Protect all percentage calculations with zero-checks
+
+**Rationale**  
+- Safety: Prevents runtime exceptions
+- Robustness: System continues operating even with edge case data
+- Defensive programming: Validate before calculate
+
+**Consequences**  
+- ✅ No runtime crashes from division by zero
+- ✅ Graceful handling of edge cases
+- ⚠️ May miss optimizations when historical data is sparse
+
+**Implementation**:
+```python
+def _optimize_duration(self) -> List[Optimization]:
+    # ...
+    if historical_avg <= 0:
+        continue  # Skip to avoid division by zero
+    # ...
+```
+
+---
+
 ## Design Principles
 
 ### 1. Determinism
@@ -470,6 +501,7 @@ Reflection Request
 | Config drift | ADR-008 | Defaults for all settings |
 | API confusion | ADR-009 | Consistent with existing agents |
 | False positives | ADR-010 | Confidence scoring with thresholds |
+| Division by zero | ADR-011 | Explicit zero checks before division |
 
 ---
 
@@ -477,6 +509,7 @@ Reflection Request
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-09 | 1.0.1 | Fixed division by zero protection (ADR-011) |
 | 2026-02-09 | 1.0.0 | Initial implementation of Step 2 |
 
 ---

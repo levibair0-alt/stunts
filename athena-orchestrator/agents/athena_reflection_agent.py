@@ -739,18 +739,22 @@ class AthenaReflectionAgent:
     def _optimize_duration(self) -> List[Optimization]:
         """Generate optimizations to reduce execution duration"""
         optimizations = []
-        
+
         # Find task types with increasing duration
         duration_by_type = defaultdict(list)
         for record in self.execution_history:
             if record.duration_ms > 0:
                 duration_by_type[record.task_type].append(record.duration_ms)
-        
+
         for task_type, durations in duration_by_type.items():
             if len(durations) >= 10:
                 historical_avg = sum(durations[:-10]) / max(len(durations) - 10, 1)
                 recent_avg = sum(durations[-10:]) / 10
-                
+
+                # Skip if historical_avg is 0 to avoid division by zero
+                if historical_avg <= 0:
+                    continue
+
                 if recent_avg > historical_avg * 1.3:  # 30% slower
                     opt = Optimization(
                         optimization_id=self._generate_id("opt"),
@@ -765,7 +769,7 @@ class AthenaReflectionAgent:
                         applies_to=[task_type]
                     )
                     optimizations.append(opt)
-        
+
         return optimizations
     
     def _optimize_throughput(self) -> List[Optimization]:

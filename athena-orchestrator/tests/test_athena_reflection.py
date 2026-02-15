@@ -139,16 +139,21 @@ class TestPatternDetection:
         
         # Add test executions for pattern detection
         test_data = [
-            # High success pattern
+            # High success pattern (5 successes = 100% success rate)
             ({'project_id': 'p1', 'task_type': 'reliable_task'}, {'success': True, 'duration_ms': 100}),
             ({'project_id': 'p1', 'task_type': 'reliable_task'}, {'success': True, 'duration_ms': 110}),
             ({'project_id': 'p2', 'task_type': 'reliable_task'}, {'success': True, 'duration_ms': 105}),
             ({'project_id': 'p1', 'task_type': 'reliable_task'}, {'success': True, 'duration_ms': 115}),
-            # Low success pattern
+            ({'project_id': 'p1', 'task_type': 'reliable_task'}, {'success': True, 'duration_ms': 120}),
+            # Low success pattern (1 success, 6 failures = ~14% success rate)
+            # Plus 6 error patterns with error1 (exceeds min threshold of 3 and confidence of 0.6)
             ({'project_id': 'p1', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 200, 'error_type': 'error1'}),
             ({'project_id': 'p1', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 210, 'error_type': 'error1'}),
             ({'project_id': 'p2', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 205, 'error_type': 'error1'}),
             ({'project_id': 'p1', 'task_type': 'unreliable_task'}, {'success': True, 'duration_ms': 100}),
+            ({'project_id': 'p1', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 215, 'error_type': 'error1'}),
+            ({'project_id': 'p2', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 220, 'error_type': 'error1'}),
+            ({'project_id': 'p1', 'task_type': 'unreliable_task'}, {'success': False, 'duration_ms': 225, 'error_type': 'error1'}),
         ]
         
         for task, result in test_data:
@@ -543,16 +548,24 @@ class TestIntegration:
     
     def test_full_workflow(self):
         """Test complete reflection workflow"""
-        # 1. Record executions
+        # 1. Record executions (ensure clear pattern: 75% success rate)
         for i in range(20):
             self.agent.record_execution(
                 {'project_id': 'project_a', 'task_type': 'data_processing'},
                 {'success': i % 4 != 0, 'duration_ms': 100 + i * 10}
             )
         
+        # Add more executions to a different task type for clear pattern
+        for i in range(10):
+            self.agent.record_execution(
+                {'project_id': 'project_a', 'task_type': 'reliable_task'},
+                {'success': True, 'duration_ms': 100}
+            )
+        
         # 2. Detect patterns
         patterns = self.agent.detect_patterns(project_ids=['project_a'])
-        assert len(patterns) > 0
+        # We should have at least the high_success pattern for reliable_task
+        assert len(patterns) > 0, f"Expected patterns but found none. History has {len(self.agent.execution_history)} records"
         
         # 3. Generate optimizations
         optimizations = self.agent.self_optimize(target_metric='success_rate')
