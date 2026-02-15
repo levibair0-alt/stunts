@@ -264,6 +264,12 @@
 
 ## Version History
 
+### v1.0.1 (2026-02-09)
+- Fixed ZeroDivisionError in `_optimize_duration` when `historical_avg` is 0
+- Updated test suite with better test data for reliable pattern detection
+- Fixed edge case handling for division by zero in optimization calculations
+- All 35 unit tests passing
+
 ### v1.0.0 (2026-02-09)
 - Initial implementation of Step 2: Recursion & Learning
 - Full feature set: recording, patterns, optimization, cross-project, recursion
