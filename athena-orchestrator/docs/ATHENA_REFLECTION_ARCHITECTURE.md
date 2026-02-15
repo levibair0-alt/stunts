@@ -67,7 +67,9 @@ Detected patterns need to persist across system restarts. Storage format and ret
 - Format: JSON for readability, YAML for configuration
 - Location: `./data/reflection/` directory
 - Retention: Last 1000 execution records, all patterns preserved
-- Auto-save: Every 10 executions (configurable)
+- Optimization history: Last 50 suggestions
+- Cross-project knowledge: All transfers preserved
+- Auto-save: Configurable interval (default: 100 executions)
 
 **Rationale**  
 - JSON is human-readable for debugging

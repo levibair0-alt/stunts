@@ -163,6 +163,7 @@ class AthenaReflectionAgent:
         self.similarity_threshold = self.config.get('patterns', {}).get(
             'similarity_threshold', 0.75
         )
+        self.max_history = self.config.get('learning', {}).get('max_history', 1000)
         
         # Initialize data stores
         self.execution_history: List[ExecutionRecord] = []
@@ -199,15 +200,48 @@ class AthenaReflectionAgent:
     def _default_config(self) -> Dict[str, Any]:
         """Return default configuration"""
         return {
-            'learning': {'enabled': True, 'decay_factor': 0.95},
-            'recursion': {'max_depth': 3, 'early_termination': True},
-            'patterns': {'threshold': 3, 'similarity_threshold': 0.75},
-            'cross_project': {'enabled': True, 'share_anonymized': True},
-            'persistence': {'enabled': True, 'path': './data/reflection'}
+            'learning': {
+                'enabled': True,
+                'decay_factor': 0.95,
+                'min_samples': 3,
+                'max_history': 1000
+            },
+            'recursion': {
+                'max_depth': 3,
+                'early_termination': True,
+                'confidence_threshold': 0.5,
+                'depth_penalty': 0.1
+            },
+            'patterns': {
+                'threshold': 3,
+                'similarity_threshold': 0.75,
+                'min_confidence': 0.6
+            },
+            'cross_project': {
+                'enabled': True,
+                'share_anonymized': True,
+                'max_projects': 10,
+                'transfer_threshold': 0.7
+            },
+            'optimization': {
+                'enabled': True,
+                'min_improvement': 0.05,
+                'max_suggestions': 10,
+                'target_metrics': ['success_rate', 'duration', 'throughput']
+            },
+            'persistence': {
+                'enabled': True,
+                'path': './data/reflection',
+                'auto_save': True,
+                'save_interval': 100
+            },
+            'performance': {
+                'background_processing': True
+            }
         }
     
     def _load_persisted_data(self) -> None:
-        """Load persisted patterns and execution history"""
+        """Load persisted patterns, execution history, and knowledge"""
         persistence_config = self.config.get('persistence', {})
         if not persistence_config.get('enabled', True):
             return
@@ -226,21 +260,46 @@ class AthenaReflectionAgent:
             except Exception as e:
                 print(f"[ATHENA-Reflection] Error loading patterns: {e}")
         
-        # Load execution history (last 1000 records)
+        # Load execution history
         history_file = os.path.join(data_path, 'execution_history.json')
         if os.path.exists(history_file):
             try:
                 with open(history_file, 'r') as f:
                     history_data = json.load(f)
-                # Keep only last 1000 records
-                recent_records = history_data[-1000:] if len(history_data) > 1000 else history_data
+                # Keep only last max_history records
+                recent_records = (
+                    history_data[-self.max_history:]
+                    if len(history_data) > self.max_history else history_data
+                )
                 self.execution_history = [ExecutionRecord(**record) for record in recent_records]
                 print(f"[ATHENA-Reflection] Loaded {len(self.execution_history)} execution records")
             except Exception as e:
                 print(f"[ATHENA-Reflection] Error loading history: {e}")
+        
+        # Load optimization history
+        optimizations_file = os.path.join(data_path, 'optimizations.json')
+        if os.path.exists(optimizations_file):
+            try:
+                with open(optimizations_file, 'r') as f:
+                    optimization_data = json.load(f)
+                self.optimization_history = [Optimization(**opt) for opt in optimization_data]
+                print(f"[ATHENA-Reflection] Loaded {len(self.optimization_history)} optimizations")
+            except Exception as e:
+                print(f"[ATHENA-Reflection] Error loading optimizations: {e}")
+        
+        # Load cross-project knowledge
+        cross_project_file = os.path.join(data_path, 'cross_project_knowledge.json')
+        if os.path.exists(cross_project_file):
+            try:
+                with open(cross_project_file, 'r') as f:
+                    cross_project_data = json.load(f)
+                self.cross_project_knowledge = defaultdict(dict, cross_project_data)
+                print(f"[ATHENA-Reflection] Loaded {len(self.cross_project_knowledge)} cross-project transfers")
+            except Exception as e:
+                print(f"[ATHENA-Reflection] Error loading cross-project knowledge: {e}")
     
     def _persist_data(self) -> None:
-        """Persist patterns and execution history to disk"""
+        """Persist patterns, history, optimizations, and cross-project knowledge"""
         persistence_config = self.config.get('persistence', {})
         if not persistence_config.get('enabled', True):
             return
@@ -257,15 +316,32 @@ class AthenaReflectionAgent:
         except Exception as e:
             print(f"[ATHENA-Reflection] Error persisting patterns: {e}")
         
-        # Persist execution history (last 1000 records)
+        # Persist execution history
         history_file = os.path.join(data_path, 'execution_history.json')
         try:
-            recent_history = self.execution_history[-1000:]
+            recent_history = self.execution_history[-self.max_history:]
             history_data = [asdict(record) for record in recent_history]
             with open(history_file, 'w') as f:
                 json.dump(history_data, f, indent=2)
         except Exception as e:
             print(f"[ATHENA-Reflection] Error persisting history: {e}")
+        
+        # Persist optimization history
+        optimizations_file = os.path.join(data_path, 'optimizations.json')
+        try:
+            optimization_data = [asdict(opt) for opt in self.optimization_history[-50:]]
+            with open(optimizations_file, 'w') as f:
+                json.dump(optimization_data, f, indent=2)
+        except Exception as e:
+            print(f"[ATHENA-Reflection] Error persisting optimizations: {e}")
+        
+        # Persist cross-project knowledge
+        cross_project_file = os.path.join(data_path, 'cross_project_knowledge.json')
+        try:
+            with open(cross_project_file, 'w') as f:
+                json.dump(dict(self.cross_project_knowledge), f, indent=2)
+        except Exception as e:
+            print(f"[ATHENA-Reflection] Error persisting cross-project knowledge: {e}")
     
     def _compute_hash(self, data: Dict[str, Any]) -> str:
         """Compute hash for data deduplication"""
@@ -312,10 +388,15 @@ class AthenaReflectionAgent:
         )
         
         self.execution_history.append(record)
+        if len(self.execution_history) > self.max_history:
+            self.execution_history = self.execution_history[-self.max_history:]
         
         # Trigger pattern detection if enough new records
-        if len(self.execution_history) % 10 == 0:
+        background_enabled = self.config.get('performance', {}).get('background_processing', True)
+        if background_enabled and len(self.execution_history) % 10 == 0:
             self._background_pattern_detection()
+        
+        self._maybe_persist_data()
         
         print(f"[ATHENA-Reflection] Recorded execution {record.record_id}")
         return record
@@ -329,9 +410,17 @@ class AthenaReflectionAgent:
         
         # Detect duration patterns
         self._detect_duration_patterns()
-        
-        # Persist updated patterns
-        self._persist_data()
+    
+    def _maybe_persist_data(self, force: bool = False) -> None:
+        """Persist data when auto-save conditions are met"""
+        persistence_config = self.config.get('persistence', {})
+        if not persistence_config.get('enabled', True):
+            return
+        if not persistence_config.get('auto_save', True) and not force:
+            return
+        save_interval = persistence_config.get('save_interval', 10)
+        if force or (save_interval > 0 and len(self.execution_history) % save_interval == 0):
+            self._persist_data()
     
     def detect_patterns(self, project_ids: Optional[List[str]] = None,
                         pattern_types: Optional[List[str]] = None) -> List[Pattern]:
@@ -371,6 +460,10 @@ class AthenaReflectionAgent:
         # Detect time-based patterns
         if not pattern_types or 'temporal' in pattern_types:
             patterns.extend(self._detect_temporal_patterns(records))
+        
+        min_confidence = self.config.get('patterns', {}).get('min_confidence', 0.0)
+        if min_confidence > 0:
+            patterns = [p for p in patterns if p.confidence >= min_confidence]
         
         print(f"[ATHENA-Reflection] Detected {len(patterns)} patterns")
         return patterns
@@ -580,6 +673,11 @@ class AthenaReflectionAgent:
             print("[ATHENA-Reflection] Learning is disabled")
             return []
         
+        optimization_config = self.config.get('optimization', {})
+        if not optimization_config.get('enabled', True):
+            print("[ATHENA-Reflection] Optimization is disabled")
+            return []
+        
         optimizations = []
         
         if target_metric == "success_rate":
@@ -588,6 +686,17 @@ class AthenaReflectionAgent:
             optimizations.extend(self._optimize_duration())
         elif target_metric == "throughput":
             optimizations.extend(self._optimize_throughput())
+        
+        min_improvement = optimization_config.get('min_improvement', 0.0)
+        if min_improvement > 0:
+            optimizations = [
+                opt for opt in optimizations
+                if opt.expected_improvement >= min_improvement
+            ]
+        
+        max_suggestions = optimization_config.get('max_suggestions', len(optimizations))
+        if max_suggestions and len(optimizations) > max_suggestions:
+            optimizations = optimizations[:max_suggestions]
         
         # Store optimizations
         for opt in optimizations:
@@ -697,7 +806,8 @@ class AthenaReflectionAgent:
         Returns:
             Dictionary with transferred knowledge summary
         """
-        if not self.config.get('cross_project', {}).get('enabled', True):
+        cross_project_config = self.config.get('cross_project', {})
+        if not cross_project_config.get('enabled', True):
             return {'status': 'disabled', 'message': 'Cross-project learning disabled'}
         
         # Filter records for source project
@@ -707,8 +817,19 @@ class AthenaReflectionAgent:
         if not source_records:
             return {'status': 'error', 'message': f'No data for project {source_project}'}
         
+        knowledge_key = f"{source_project}_to_{target_project}"
+        max_projects = cross_project_config.get('max_projects')
+        if max_projects and knowledge_key not in self.cross_project_knowledge:
+            if len(self.cross_project_knowledge) >= max_projects:
+                return {
+                    'status': 'error',
+                    'message': 'Cross-project transfer limit reached'
+                }
+        
         # Extract patterns from source
         source_patterns = self.detect_patterns(project_ids=[source_project])
+        transfer_threshold = cross_project_config.get('transfer_threshold', 0.0)
+        share_anonymized = cross_project_config.get('share_anonymized', True)
         
         # Identify applicable patterns for target
         transferred_patterns = []
@@ -716,9 +837,10 @@ class AthenaReflectionAgent:
             # Skip project-specific patterns
             if pattern.pattern_type in ['temporal', 'project_specific']:
                 continue
+            if pattern.confidence < transfer_threshold:
+                continue
             
             # Add to cross-project knowledge
-            knowledge_key = f"{source_project}_to_{target_project}"
             if knowledge_key not in self.cross_project_knowledge:
                 self.cross_project_knowledge[knowledge_key] = {
                     'source': source_project,
@@ -727,8 +849,12 @@ class AthenaReflectionAgent:
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 }
             
+            pattern_payload = asdict(pattern)
+            if share_anonymized:
+                pattern_payload['projects'] = ['anonymized']
+            
             self.cross_project_knowledge[knowledge_key]['patterns'].append(
-                asdict(pattern)
+                pattern_payload
             )
             transferred_patterns.append(pattern.pattern_id)
         
@@ -740,6 +866,8 @@ class AthenaReflectionAgent:
             'pattern_ids': transferred_patterns,
             'timestamp': datetime.now(timezone.utc).isoformat()
         }
+        
+        self._maybe_persist_data(force=True)
         
         print(f"[ATHENA-Reflection] Cross-project learning: {source_project} -> {target_project}")
         print(f"[ATHENA-Reflection] Transferred {len(transferred_patterns)} patterns")
@@ -758,6 +886,11 @@ class AthenaReflectionAgent:
         Returns:
             ReflectionResult with insights and recommendations
         """
+        recursion_config = self.config.get('recursion', {})
+        confidence_threshold = recursion_config.get('confidence_threshold', 0.5)
+        early_termination = recursion_config.get('early_termination', True)
+        depth_penalty = recursion_config.get('depth_penalty', 0.0)
+        
         # Check recursion depth
         if depth >= self.max_recursion_depth:
             return ReflectionResult(
@@ -805,6 +938,7 @@ class AthenaReflectionAgent:
         pattern_confidence = sum(p.confidence for p in relevant_patterns) / max(len(relevant_patterns), 1)
         opt_confidence = sum(o.confidence for o in optimizations) / max(len(optimizations), 1)
         confidence_score = (pattern_confidence + opt_confidence) / 2
+        confidence_score = max(0.0, confidence_score - (depth * depth_penalty))
         
         result = ReflectionResult(
             reflection_id=reflection_id,
@@ -822,8 +956,12 @@ class AthenaReflectionAgent:
             }
         )
         
-        # Recursive call for deeper analysis (if confidence is low)
-        if confidence_score < 0.5 and depth < self.max_recursion_depth - 1:
+        # Recursive call for deeper analysis
+        should_recurse = depth < self.max_recursion_depth - 1
+        if early_termination:
+            should_recurse = should_recurse and confidence_score < confidence_threshold
+        
+        if should_recurse:
             deeper_context = context.copy()
             deeper_context['parent_reflection'] = reflection_id
             deeper_result = self.reflect(deeper_context, depth + 1)
