@@ -40,6 +40,7 @@ jobs:
         run: |
           cd athena-orchestrator
           pip install -r requirements.txt
+          pip install pytest
       
       - name: Run tests
         run: |

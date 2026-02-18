@@ -2,236 +2,334 @@
 """
 Chat Export to Markdown Converter
 
-This script converts chat export JSON files from various AI services (ChatGPT, Claude, etc.)
-into readable Markdown documents.
+This script converts chat export JSON files from various services (ChatGPT, Claude, etc.)
+into clean, readable Markdown documents.
 
 Usage:
     python convert_chat_export.py <path_to_json_file>
+    
+Example:
+    python convert_chat_export.py conversations.json
+    
+The script will:
+1. Detect the chat service format
+2. Parse the conversations and messages
+3. Generate Markdown files in the outputs/ directory
 """
 
 import argparse
 import json
 import os
+import re
 import sys
-from datetime import datetime
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import List, Optional
 
-from chatgpt_parser import ChatGPTParser
+from chatgpt_parser import ChatGPTParser, ChatGPTConversation, ChatGPTMessage
 
 
-def sanitize_filename(title: str) -> str:
-    """
-    Sanitize a conversation title for use as a filename.
+class MarkdownGenerator:
+    """Generates Markdown documents from parsed conversations."""
     
-    Args:
-        title: The conversation title to sanitize
+    def __init__(self, output_dir: str = 'outputs'):
+        """
+        Initialize the Markdown generator.
         
-    Returns:
-        A safe filename string
-    """
-    # Remove or replace unsafe characters
-    unsafe_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
-    for char in unsafe_chars:
-        title = title.replace(char, '_')
+        Args:
+            output_dir: Directory to save generated Markdown files
+        """
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
     
-    # Limit length
-    if len(title) > 100:
-        title = title[:97] + '...'
-    
-    return title.strip()
-
-
-def detect_format(data: Dict) -> Optional[str]:
-    """
-    Detect the chat service format from the JSON data structure.
-    
-    Args:
-        data: The loaded JSON data
+    def sanitize_filename(self, title: str, max_length: int = 100) -> str:
+        """
+        Sanitize a conversation title to create a valid filename.
         
-    Returns:
-        The format identifier ('chatgpt', 'claude', etc.) or None if unknown
-    """
-    # Check for ChatGPT format
-    if isinstance(data, list) and len(data) > 0:
-        first_item = data[0]
-        if 'title' in first_item and 'mapping' in first_item:
-            return 'chatgpt'
-    
-    return None
-
-
-def parse_conversations(file_path: str, format_type: str) -> List[Dict]:
-    """
-    Parse conversations from the export file based on format type.
-    
-    Args:
-        file_path: Path to the JSON export file
-        format_type: The format identifier
+        Args:
+            title: Original conversation title
+            max_length: Maximum filename length
+            
+        Returns:
+            Sanitized filename
+        """
+        # Remove or replace invalid characters
+        sanitized = re.sub(r'[<>:"/\\|?*]', '-', title)
+        sanitized = re.sub(r'\s+', '_', sanitized)
+        sanitized = re.sub(r'_+', '_', sanitized)
+        sanitized = sanitized.strip('_-.')
         
-    Returns:
-        List of parsed conversation dictionaries
-    """
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    
-    if format_type == 'chatgpt':
-        parser = ChatGPTParser()
-        return parser.parse(data)
-    else:
-        raise ValueError(f"Unsupported format: {format_type}")
-
-
-def format_timestamp(timestamp: Optional[float]) -> str:
-    """
-    Format a Unix timestamp into a readable date string.
-    
-    Args:
-        timestamp: Unix timestamp (seconds since epoch)
+        # Truncate if too long
+        if len(sanitized) > max_length:
+            sanitized = sanitized[:max_length].rstrip('_-.')
         
-    Returns:
-        Formatted date string or empty string if timestamp is None
-    """
-    if timestamp is None:
-        return ''
-    
-    return datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-
-def format_message_content(content_parts: List[Dict]) -> str:
-    """
-    Format message content parts into Markdown.
-    
-    Args:
-        content_parts: List of content part dictionaries
+        # Ensure we have a valid filename
+        if not sanitized:
+            sanitized = 'conversation'
         
-    Returns:
-        Formatted Markdown string
-    """
-    if not content_parts:
-        return ''
+        return sanitized
     
-    formatted_parts = []
-    for part in content_parts:
-        content_type = part.get('content_type', 'text')
+    def generate_chatgpt_markdown(self, conversation: ChatGPTConversation, 
+                                  conversation_number: int = 1) -> str:
+        """
+        Generate Markdown content for a ChatGPT conversation.
         
-        if content_type == 'text':
-            text = part.get('text', '')
-            formatted_parts.append(text)
-        elif content_type == 'code':
-            code = part.get('text', '')
-            language = part.get('language', '')
-            formatted_parts.append(f'\n```{language}\n{code}\n```\n')
-        elif content_type == 'execution_output':
-            output = part.get('text', '')
-            formatted_parts.append(f'\n**Execution Output:**\n```\n{output}\n```\n')
+        Args:
+            conversation: ChatGPTConversation object
+            conversation_number: Number of this conversation (for unique filenames)
+            
+        Returns:
+            Path to the generated Markdown file
+        """
+        lines = []
+        
+        # Header with title
+        lines.append(f"# {conversation.title}")
+        lines.append("")
+        
+        # Metadata
+        lines.append("## Conversation Metadata")
+        lines.append("")
+        lines.append(f"- **Created:** {conversation.get_formatted_create_time()}")
+        lines.append(f"- **Updated:** {conversation.get_formatted_update_time()}")
+        lines.append(f"- **Messages:** {len(conversation.messages)}")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        
+        # Messages
+        lines.append("## Conversation")
+        lines.append("")
+        
+        for message in conversation.messages:
+            lines.extend(self._format_message(message))
+        
+        # Generate filename
+        base_filename = self.sanitize_filename(conversation.title)
+        filename = f"{conversation_number:03d}_{base_filename}.md"
+        filepath = self.output_dir / filename
+        
+        # Handle duplicate filenames
+        counter = 1
+        while filepath.exists():
+            filename = f"{conversation_number:03d}_{base_filename}_{counter}.md"
+            filepath = self.output_dir / filename
+            counter += 1
+        
+        # Write to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+        
+        return str(filepath)
     
-    return ''.join(formatted_parts)
-
-
-def messages_to_mapping(messages: List[Dict]) -> str:
-    """
-    Convert a flat list of messages into Markdown format.
-    
-    Args:
-        messages: List of message dictionaries with role, content, timestamp
+    def _format_message(self, message: ChatGPTMessage) -> List[str]:
+        """
+        Format a single message as Markdown.
         
-    Returns:
-        Formatted Markdown string
-    """
-    markdown_lines = []
-    
-    for msg in messages:
-        role = msg.get('role', 'unknown')
-        content = msg.get('content', '')
-        timestamp = msg.get('timestamp')
+        Args:
+            message: ChatGPTMessage object
+            
+        Returns:
+            List of Markdown lines
+        """
+        lines = []
         
-        # Format timestamp
-        ts_str = format_timestamp(timestamp)
-        if ts_str:
-            ts_line = f'*{ts_str}*\n'
-        else:
-            ts_line = ''
+        # Role header with timestamp
+        role_display = {
+            'user': '👤 User',
+            'assistant': '🤖 Assistant',
+            'system': '⚙️ System',
+            'tool': '🔧 Tool'
+        }.get(message.role, f'❓ {message.role.capitalize()}')
         
-        # Role-based formatting
-        if role == 'user':
-            markdown_lines.append(f'\n### 👤 User\n\n{ts_str}')
-        elif role == 'assistant':
-            markdown_lines.append(f'\n### 🤖 Assistant\n\n{ts_str}')
-        elif role == 'system':
-            markdown_lines.append(f'\n### ⚙️ System\n\n{ts_str}')
-        else:
-            markdown_lines.append(f'\n### {role.title()}\n\n{ts_str}')
+        lines.append(f"### {role_display}")
+        lines.append("")
+        lines.append(f"*{message.get_formatted_timestamp()}*")
+        lines.append("")
         
         # Content
-        if content:
-            markdown_lines.append(f'{content}\n')
-    
-    return '\n'.join(markdown_lines)
-
-
-def generate_markdown(conversation: Dict) -> str:
-    """
-    Generate Markdown content for a conversation.
-    
-    Args:
-        conversation: Parsed conversation dictionary
+        content = self._format_content(message.content)
+        lines.append(content)
+        lines.append("")
+        lines.append("---")
+        lines.append("")
         
-    Returns:
-        Complete Markdown document as string
-    """
-    title = conversation.get('title', 'Untitled Conversation')
-    created_at = conversation.get('created_at')
-    updated_at = conversation.get('updated_at')
-    messages = conversation.get('messages', [])
+        return lines
     
-    # Header
-    markdown_lines = [f'# {title}\n']
-    
-    # Metadata
-    markdown_lines.append('---\n')
-    if created_at:
-        markdown_lines.append(f'**Created:** {format_timestamp(created_at)}\n')
-    if updated_at:
-        markdown_lines.append(f'**Last Updated:** {format_timestamp(updated_at)}\n')
-    markdown_lines.append('---\n')
-    
-    # Messages
-    markdown_lines.append(messages_to_mapping(messages))
-    
-    return '\n'.join(markdown_lines)
-
-
-def save_markdown(content: str, output_dir: str, filename: str) -> str:
-    """
-    Save Markdown content to a file.
-    
-    Args:
-        content: The Markdown content to save
-        output_dir: Directory to save the file in
-        filename: The filename (without extension)
+    def _format_content(self, content: str) -> str:
+        """
+        Format message content, preserving code blocks and formatting.
         
-    Returns:
-        Full path to the saved file
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    filepath = os.path.join(output_dir, f'{filename}.md')
+        Args:
+            content: Raw message content
+            
+        Returns:
+            Formatted content
+        """
+        # If content already has markdown code blocks, preserve them
+        if '```' in content:
+            return content
+        
+        # Check if entire content looks like code (simple heuristic)
+        lines = content.split('\n')
+        if len(lines) > 1:
+            # If most lines are indented or contain code-like patterns
+            code_indicators = sum(1 for line in lines if 
+                                 line.startswith((' ', '\t')) or 
+                                 re.search(r'[{}\[\];()=]', line))
+            if code_indicators > len(lines) * 0.5:
+                # Wrap in generic code block
+                return f"```\n{content}\n```"
+        
+        return content
+
+
+class ChatExportConverter:
+    """Main converter class that handles format detection and conversion."""
     
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(content)
+    def __init__(self, json_path: str, output_dir: str = 'outputs'):
+        """
+        Initialize the converter.
+        
+        Args:
+            json_path: Path to the JSON export file
+            output_dir: Directory to save Markdown files
+        """
+        self.json_path = Path(json_path)
+        self.output_dir = output_dir
+        self.json_data = None
+        self.markdown_generator = MarkdownGenerator(output_dir)
     
-    return filepath
+    def load_json(self) -> bool:
+        """
+        Load and parse the JSON file.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with open(self.json_path, 'r', encoding='utf-8') as f:
+                self.json_data = json.load(f)
+            return True
+        except FileNotFoundError:
+            print(f"Error: File not found: {self.json_path}")
+            return False
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON file: {e}")
+            return False
+        except Exception as e:
+            print(f"Error loading file: {e}")
+            return False
+    
+    def detect_format(self) -> Optional[str]:
+        """
+        Detect the chat service format from the JSON structure.
+        
+        Returns:
+            Format name ('chatgpt', 'claude', etc.) or None if unknown
+        """
+        if not self.json_data:
+            return None
+        
+        # Check for ChatGPT format
+        if ChatGPTParser.is_chatgpt_format(self.json_data):
+            return 'chatgpt'
+        
+        # Add more format detectors here as we support more services
+        # if ClaudeParser.is_claude_format(self.json_data):
+        #     return 'claude'
+        
+        return None
+    
+    def convert(self) -> bool:
+        """
+        Convert the chat export to Markdown.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        # Load JSON
+        print(f"Loading JSON file: {self.json_path}")
+        if not self.load_json():
+            return False
+        
+        # Detect format
+        print("Detecting chat service format...")
+        format_name = self.detect_format()
+        
+        if not format_name:
+            print("Error: Unknown chat export format")
+            print("Currently supported formats: ChatGPT")
+            return False
+        
+        print(f"Detected format: {format_name.upper()}")
+        
+        # Parse conversations based on format
+        if format_name == 'chatgpt':
+            return self._convert_chatgpt()
+        
+        # Add more format handlers here
+        # elif format_name == 'claude':
+        #     return self._convert_claude()
+        
+        return False
+    
+    def _convert_chatgpt(self) -> bool:
+        """
+        Convert ChatGPT export to Markdown.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            parser = ChatGPTParser(self.json_data)
+            conversations = parser.parse_conversations()
+            
+            if not conversations:
+                print("Warning: No conversations found in export")
+                return False
+            
+            print(f"Found {len(conversations)} conversation(s)")
+            print(f"Generating Markdown files in: {self.output_dir}")
+            
+            generated_files = []
+            for idx, conversation in enumerate(conversations, 1):
+                print(f"  [{idx}/{len(conversations)}] Converting: {conversation.title}")
+                filepath = self.markdown_generator.generate_chatgpt_markdown(
+                    conversation, 
+                    conversation_number=idx
+                )
+                generated_files.append(filepath)
+            
+            print(f"\n✓ Successfully generated {len(generated_files)} Markdown file(s)")
+            print(f"\nGenerated files:")
+            for filepath in generated_files:
+                print(f"  - {filepath}")
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error during conversion: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
 
 def main():
-    """Main entry point for the converter."""
+    """Main entry point for the script."""
     parser = argparse.ArgumentParser(
         description='Convert chat export JSON files to Markdown',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
   python convert_chat_export.py conversations.json
-  python convert_chat_export.py ~/Downloads/conversations.json
-        '''
+  python convert_chat_export.py chatgpt_export.json
+  
+Supported formats:
+  - ChatGPT (conversations.json from Settings > Data Controls > Export)
+  
+Output:
+  Markdown files will be saved to the outputs/ directory with sanitized filenames.
+        """
     )
     
     parser.add_argument(
@@ -240,52 +338,29 @@ Examples:
     )
     
     parser.add_argument(
-        '-o', '--output-dir',
+        '-o', '--output',
         default='outputs',
-        help='Output directory for Markdown files (default: outputs/)'
+        help='Output directory for Markdown files (default: outputs)'
     )
     
     args = parser.parse_args()
     
-    # Check if file exists
-    if not os.path.isfile(args.json_file):
-        print(f"Error: File not found: {args.json_file}", file=sys.stderr)
-        sys.exit(1)
+    # Convert paths to be relative to script location
+    script_dir = Path(__file__).parent
+    json_path = Path(args.json_file)
+    if not json_path.is_absolute():
+        json_path = script_dir / json_path
     
-    # Load and detect format
-    print(f"Loading: {args.json_file}")
-    with open(args.json_file, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    output_dir = Path(args.output)
+    if not output_dir.is_absolute():
+        output_dir = script_dir / output_dir
     
-    format_type = detect_format(data)
-    if not format_type:
-        print("Error: Could not detect chat service format.", file=sys.stderr)
-        print("Supported formats: ChatGPT", file=sys.stderr)
-        sys.exit(1)
+    # Create converter and run
+    converter = ChatExportConverter(str(json_path), str(output_dir))
+    success = converter.convert()
     
-    print(f"Detected format: {format_type}")
-    
-    # Parse conversations
-    print("Parsing conversations...")
-    conversations = parse_conversations(args.json_file, format_type)
-    print(f"Found {len(conversations)} conversations")
-    
-    # Convert to Markdown
-    output_dir = os.path.join(os.path.dirname(__file__), args.output_dir)
-    converted_count = 0
-    
-    for conv in conversations:
-        title = conv.get('title', 'untitled')
-        filename = sanitize_filename(title)
-        
-        markdown_content = generate_markdown(conv)
-        saved_path = save_markdown(markdown_content, output_dir, filename)
-        
-        converted_count += 1
-        print(f"  [{converted_count}/{len(conversations)}] {title} -> {os.path.basename(saved_path)}")
-    
-    print(f"\n✅ Successfully converted {converted_count} conversations to Markdown")
-    print(f"📁 Output directory: {output_dir}")
+    # Exit with appropriate code
+    sys.exit(0 if success else 1)
 
 
 if __name__ == '__main__':

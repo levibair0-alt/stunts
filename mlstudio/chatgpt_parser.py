@@ -1,298 +1,288 @@
 """
-ChatGPT Export Format Parser
+ChatGPT Export Parser
 
-This module handles parsing ChatGPT conversation export JSON files
-into a standardized format for Markdown conversion.
+This module handles parsing of ChatGPT export JSON files into a structured format.
+ChatGPT exports come as a conversations.json file containing an array of conversation objects.
 
-ChatGPT export structure:
-- conversations.json: Array of conversation objects
-- Each conversation has:
-  - title: string
-  - create_time: float (Unix timestamp)
-  - update_time: float (Unix timestamp)
-  - mapping: dict of message nodes (tree structure)
-- Message nodes:
-  - id: string
-  - message: dict with content, author, create_time
-  - parent: optional string (parent message id)
-- Content parts: Can be text, code, execution_output
+Export structure:
+- Each conversation has: title, create_time, update_time, mapping (message tree)
+- Messages are stored in a mapping dict with message IDs as keys
+- Each message has: id, message (content, author), create_time, parent, children
+- Content parts can be text or code
 """
 
+import json
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 
 
-class ChatGPTParser:
-    """
-    Parser for ChatGPT conversation export format.
-    """
+class ChatGPTMessage:
+    """Represents a single message in a ChatGPT conversation."""
     
-    def parse(self, data: List[Dict]) -> List[Dict]:
+    def __init__(self, message_id: str, role: str, content: str, timestamp: float):
+        self.id = message_id
+        self.role = role  # 'user', 'assistant', 'system', or 'tool'
+        self.content = content
+        self.timestamp = timestamp
+    
+    def get_formatted_timestamp(self) -> str:
+        """Convert Unix timestamp to readable format."""
+        if self.timestamp:
+            return datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        return 'Unknown time'
+    
+    def __repr__(self):
+        return f"ChatGPTMessage(role={self.role}, timestamp={self.get_formatted_timestamp()})"
+
+
+class ChatGPTConversation:
+    """Represents a complete ChatGPT conversation with all messages."""
+    
+    def __init__(self, title: str, create_time: float, update_time: float):
+        self.title = title
+        self.create_time = create_time
+        self.update_time = update_time
+        self.messages: List[ChatGPTMessage] = []
+    
+    def add_message(self, message: ChatGPTMessage):
+        """Add a message to the conversation."""
+        self.messages.append(message)
+    
+    def get_formatted_create_time(self) -> str:
+        """Get formatted creation time."""
+        return datetime.fromtimestamp(self.create_time).strftime('%Y-%m-%d %H:%M:%S')
+    
+    def get_formatted_update_time(self) -> str:
+        """Get formatted update time."""
+        return datetime.fromtimestamp(self.update_time).strftime('%Y-%m-%d %H:%M:%S')
+    
+    def __repr__(self):
+        return f"ChatGPTConversation(title='{self.title}', messages={len(self.messages)})"
+
+
+class ChatGPTParser:
+    """Parser for ChatGPT export JSON files."""
+    
+    def __init__(self, json_data: Dict[str, Any]):
         """
-        Parse ChatGPT conversations from export data.
+        Initialize parser with JSON data.
         
         Args:
-            data: List of conversation objects from conversations.json
+            json_data: Parsed JSON data from ChatGPT export
+        """
+        self.json_data = json_data
+    
+    @staticmethod
+    def load_from_file(file_path: str) -> 'ChatGPTParser':
+        """
+        Load ChatGPT export from file.
+        
+        Args:
+            file_path: Path to the conversations.json file
             
         Returns:
-            List of standardized conversation dictionaries
+            ChatGPTParser instance
+        """
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return ChatGPTParser(data)
+    
+    def parse_conversations(self) -> List[ChatGPTConversation]:
+        """
+        Parse all conversations from the export.
+        
+        Returns:
+            List of ChatGPTConversation objects
         """
         conversations = []
         
-        for conv_data in data:
-            conversation = self._parse_conversation(conv_data)
-            if conversation and conversation.get('messages'):
+        # ChatGPT export is an array of conversation objects
+        if isinstance(self.json_data, list):
+            for conv_data in self.json_data:
+                conversation = self._parse_single_conversation(conv_data)
+                if conversation:
+                    conversations.append(conversation)
+        else:
+            # Single conversation object
+            conversation = self._parse_single_conversation(self.json_data)
+            if conversation:
                 conversations.append(conversation)
         
         return conversations
     
-    def _parse_conversation(self, conv_data: Dict) -> Optional[Dict]:
+    def _parse_single_conversation(self, conv_data: Dict[str, Any]) -> Optional[ChatGPTConversation]:
         """
         Parse a single conversation object.
         
         Args:
-            conv_data: Conversation object from ChatGPT export
+            conv_data: Conversation data dictionary
             
         Returns:
-            Standardized conversation dictionary
+            ChatGPTConversation object or None if parsing fails
         """
-        # Extract basic metadata
-        conversation = {
-            'title': conv_data.get('title', 'Untitled Conversation'),
-            'created_at': conv_data.get('create_time'),
-            'updated_at': conv_data.get('update_time'),
-            'messages': []
-        }
-        
-        # Extract messages from the mapping structure
-        mapping = conv_data.get('mapping', {})
-        if not mapping:
+        try:
+            title = conv_data.get('title', 'Untitled Conversation')
+            create_time = conv_data.get('create_time', 0)
+            update_time = conv_data.get('update_time', 0)
+            
+            conversation = ChatGPTConversation(title, create_time, update_time)
+            
+            # Parse the mapping (message tree)
+            mapping = conv_data.get('mapping', {})
+            if not mapping:
+                return conversation
+            
+            # Build message tree and extract linear conversation
+            messages = self._extract_messages_from_mapping(mapping)
+            
+            for message in messages:
+                conversation.add_message(message)
+            
             return conversation
-        
-        # Build message tree and flatten it
-        messages = self._build_message_list(mapping)
-        conversation['messages'] = messages
-        
-        return conversation
+            
+        except Exception as e:
+            print(f"Error parsing conversation: {e}")
+            return None
     
-    def _build_message_list(self, mapping: Dict[str, Dict]) -> List[Dict]:
+    def _extract_messages_from_mapping(self, mapping: Dict[str, Any]) -> List[ChatGPTMessage]:
         """
-        Build a chronological list of messages from the mapping structure.
+        Extract messages from the mapping tree structure.
         
-        The mapping is a tree where each node can have children.
-        We need to flatten it while preserving chronological order.
+        ChatGPT stores messages in a tree structure where each message has:
+        - id: unique identifier
+        - parent: parent message id
+        - children: list of child message ids
+        - message: the actual message content
         
         Args:
-            mapping: Dictionary of message nodes keyed by message ID
+            mapping: Message mapping dictionary
             
         Returns:
-            Chronologically ordered list of messages
+            List of ChatGPTMessage objects in chronological order
         """
-        # Find root messages (those without parents or with null parents)
-        root_ids = []
-        for msg_id, node in mapping.items():
-            parent_id = node.get('parent')
-            if parent_id is None:
-                root_ids.append(msg_id)
-        
-        # Build message trees from roots
-        all_messages = []
-        
-        for root_id in root_ids:
-            if root_id not in mapping:
-                continue
-            
-            # Traverse tree and collect messages
-            messages = self._traverse_message_tree(root_id, mapping)
-            all_messages.extend(messages)
-        
-        # Sort by timestamp
-        all_messages.sort(key=lambda m: m.get('timestamp', 0))
-        
-        return all_messages
-    
-    def _traverse_message_tree(self, node_id: str, mapping: Dict[str, Dict]) -> List[Dict]:
-        """
-        Recursively traverse message tree and collect messages.
-        
-        Args:
-            node_id: Current message node ID
-            mapping: Full mapping dictionary
-            
-        Returns:
-            List of messages from this subtree
-        """
-        node = mapping.get(node_id)
-        if not node:
-            return []
-        
         messages = []
         
-        # Parse current message
-        message = self._parse_message_node(node)
-        if message:
-            messages.append(message)
+        # Find the root message (has no parent or parent is None)
+        root_id = None
+        for msg_id, msg_data in mapping.items():
+            if msg_data.get('parent') is None or msg_data.get('parent') == '':
+                root_id = msg_id
+                break
         
-        # Find children (messages that have this message as parent)
-        children_ids = [
-            child_id for child_id, child_node in mapping.items()
-            if child_node.get('parent') == node_id
-        ]
+        if not root_id:
+            # If no clear root, just process all messages
+            for msg_id, msg_data in mapping.items():
+                message = self._parse_message_node(msg_id, msg_data)
+                if message:
+                    messages.append(message)
+            # Sort by timestamp
+            messages.sort(key=lambda m: m.timestamp)
+            return messages
         
-        # Recursively process children
-        for child_id in children_ids:
-            child_messages = self._traverse_message_tree(child_id, mapping)
-            messages.extend(child_messages)
+        # Traverse the tree from root
+        visited = set()
+        self._traverse_message_tree(root_id, mapping, messages, visited)
         
         return messages
     
-    def _parse_message_node(self, node: Dict) -> Optional[Dict]:
+    def _traverse_message_tree(self, msg_id: str, mapping: Dict[str, Any], 
+                               messages: List[ChatGPTMessage], visited: set):
+        """
+        Recursively traverse the message tree.
+        
+        Args:
+            msg_id: Current message ID
+            mapping: Complete message mapping
+            messages: List to append messages to
+            visited: Set of visited message IDs
+        """
+        if msg_id in visited or msg_id not in mapping:
+            return
+        
+        visited.add(msg_id)
+        msg_data = mapping[msg_id]
+        
+        # Parse this message
+        message = self._parse_message_node(msg_id, msg_data)
+        if message:
+            messages.append(message)
+        
+        # Process children in order (take the first child in the path)
+        children = msg_data.get('children', [])
+        if children:
+            # Follow the first child (main conversation path)
+            self._traverse_message_tree(children[0], mapping, messages, visited)
+    
+    def _parse_message_node(self, msg_id: str, msg_data: Dict[str, Any]) -> Optional[ChatGPTMessage]:
         """
         Parse a single message node.
         
         Args:
-            node: Message node from mapping
+            msg_id: Message ID
+            msg_data: Message data dictionary
             
         Returns:
-            Standardized message dictionary
+            ChatGPTMessage object or None if not a valid message
         """
-        message_data = node.get('message')
-        if not message_data:
+        message_obj = msg_data.get('message')
+        if not message_obj:
             return None
+        
+        # Extract role
+        author = message_obj.get('author', {})
+        role = author.get('role', 'unknown')
         
         # Extract content
-        content = self._extract_content(message_data)
-        if not content:
+        content_obj = message_obj.get('content', {})
+        content_type = content_obj.get('content_type', 'text')
+        
+        content = ''
+        if content_type == 'text':
+            parts = content_obj.get('parts', [])
+            if parts:
+                # Join all text parts
+                content = '\n'.join(str(part) for part in parts if part)
+        elif content_type == 'code':
+            # Handle code content
+            parts = content_obj.get('parts', [])
+            if parts:
+                content = '\n'.join(str(part) for part in parts if part)
+        
+        # Skip empty messages
+        if not content or content.strip() == '':
             return None
         
-        # Extract author role
-        author = message_data.get('author', {})
-        role = self._normalize_role(author.get('role', 'unknown'))
-        
         # Extract timestamp
-        create_time = message_data.get('create_time')
+        timestamp = message_obj.get('create_time', 0)
         
-        return {
-            'role': role,
-            'content': content,
-            'timestamp': create_time,
-            'message_id': message_data.get('id')
-        }
-    
-    def _extract_content(self, message_data: Dict) -> str:
-        """
-        Extract and format content from message data.
-        
-        Args:
-            message_data: Message dictionary
-            
-        Returns:
-            Formatted content string
-        """
-        content = message_data.get('content', {})
-        
-        # Handle content parts structure
-        if isinstance(content, dict):
-            parts = content.get('parts', [])
-        elif isinstance(content, list):
-            parts = content
-        else:
-            parts = []
-        
-        formatted_parts = []
-        
-        for part in parts:
-            if not isinstance(part, dict):
-                # Simple text string
-                formatted_parts.append(str(part))
-                continue
-            
-            content_type = part.get('content_type', 'text')
-            
-            if content_type == 'text':
-                text = part.get('text', '')
-                formatted_parts.append(text)
-            
-            elif content_type == 'code':
-                code = part.get('text', '')
-                language = part.get('language', '')
-                # We'll format code blocks in Markdown generation
-                formatted_parts.append(f'\n```{language}\n{code}\n```\n')
-            
-            elif content_type == 'execution_output':
-                output = part.get('text', '')
-                formatted_parts.append(f'\n**Execution Output:**\n```\n{output}\n```\n')
-            
-            elif content_type == 'tether_browsing_display':
-                # Handle browsing results
-                result = part.get('result', '')
-                formatted_parts.append(f'\n**Browsing Result:**\n{result}\n')
-            
-            elif content_type == 'image':
-                # Handle images (reference only)
-                metadata = part.get('metadata', {})
-                formatted_parts.append('[Image attached]\n')
-        
-        return ''.join(formatted_parts).strip()
-    
-    def _normalize_role(self, role: str) -> str:
-        """
-        Normalize role names to standard format.
-        
-        Args:
-            role: Raw role string from export
-            
-        Returns:
-            Normalized role string
-        """
-        role_lower = role.lower()
-        
-        if role_lower in ['user', 'assistant', 'system']:
-            return role_lower
-        
-        # Map ChatGPT-specific roles
-        role_mapping = {
-            'chatgpt': 'assistant',
-            'gpt': 'assistant',
-            'plugin': 'assistant',
-            'browser': 'assistant',
-        }
-        
-        return role_mapping.get(role_lower, role)
+        return ChatGPTMessage(msg_id, role, content, timestamp)
     
     @staticmethod
-    def get_format_description() -> str:
+    def is_chatgpt_format(json_data: Any) -> bool:
         """
-        Get a description of the ChatGPT export format.
+        Check if the JSON data matches ChatGPT export format.
         
+        Args:
+            json_data: Parsed JSON data
+            
         Returns:
-            Format description string
+            True if format matches ChatGPT export
         """
-        return """
-ChatGPT Export Format
-====================
-
-Export Location: Settings > Data Controls > Export
-
-Structure:
-- conversations.json: Array of conversation objects
-- Each conversation:
-  * title: Conversation title
-  * create_time: Unix timestamp
-  * update_time: Unix timestamp
-  * mapping: Message tree structure
-
-Message Structure:
-- Keyed by message ID
-- Each message:
-  * message.content.parts: Array of content parts
-  * message.author.role: 'user', 'assistant', 'system', etc.
-  * message.create_time: Unix timestamp
-  * parent: ID of parent message (null for roots)
-
-Content Types:
-- text: Plain text content
-- code: Code blocks with language
-- execution_output: Code execution results
-- tether_browsing_display: Web browsing results
-- image: Image attachments
-        """
+        # Check if it's a list of conversations or single conversation
+        if isinstance(json_data, list):
+            if len(json_data) == 0:
+                return False
+            sample = json_data[0]
+        else:
+            sample = json_data
+        
+        # Check for ChatGPT-specific structure
+        if not isinstance(sample, dict):
+            return False
+        
+        # ChatGPT exports have 'mapping' and 'create_time' fields
+        has_mapping = 'mapping' in sample
+        has_create_time = 'create_time' in sample
+        has_title = 'title' in sample
+        
+        return has_mapping and (has_create_time or has_title)

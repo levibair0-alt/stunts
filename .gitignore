@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# MLStudio generated files (keep .gitkeep)
+mlstudio/outputs/*.md
+
 # Virtual environments
 venv/
 ENV/

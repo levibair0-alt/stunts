@@ -1,13 +1,29 @@
 """
-ML Studio - Chat Export Converter
+MLStudio - Chat Export Converter
 
-A Python tool for converting AI chat export JSON files into readable Markdown documents.
+A toolkit for converting chat export JSON files from various AI chat services
+into clean, readable Markdown documents.
+
+Supported formats:
+- ChatGPT (conversations.json)
+
+Usage:
+    from mlstudio.chatgpt_parser import ChatGPTParser
+    from mlstudio.convert_chat_export import ChatExportConverter
+    
+    # Convert a file
+    converter = ChatExportConverter('conversations.json')
+    converter.convert()
 """
 
-__version__ = "1.0.0"
-__author__ = "Stunts Project"
+__version__ = '1.0.0'
+__author__ = 'MLStudio Team'
 
-from .convert_chat_export import main
-from .chatgpt_parser import ChatGPTParser
+# Make key classes available at package level
+from .chatgpt_parser import ChatGPTParser, ChatGPTConversation, ChatGPTMessage
 
-__all__ = ['main', 'ChatGPTParser']
+__all__ = [
+    'ChatGPTParser',
+    'ChatGPTConversation', 
+    'ChatGPTMessage',
+]
