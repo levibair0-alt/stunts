@@ -2,7 +2,7 @@
 
 A Python tool for converting chat export JSON files from various AI chat services into clean, readable Markdown documents.
 
-## 🎯 Features
+## Features
 
 - **Multi-format Support**: Currently supports ChatGPT, extensible for Claude and other services
 - **Clean Markdown Output**: Well-formatted conversations with proper headers, timestamps, and code blocks
@@ -11,7 +11,7 @@ A Python tool for converting chat export JSON files from various AI chat service
 - **Organized Output**: All Markdown files saved to dedicated `outputs/` directory
 - **Conversation Metadata**: Preserves creation/update times and message counts
 
-## 📦 Installation
+## Installation
 
 No external dependencies required! This tool uses only Python standard library.
 
@@ -23,7 +23,7 @@ python convert_chat_export.py <path_to_json_file>
 **Requirements:**
 - Python 3.7 or higher
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Export Your Chats from ChatGPT
 
@@ -61,7 +61,7 @@ ls outputs/
 # 003_API_Design_Discussion.md
 ```
 
-## 📖 Usage
+## Usage
 
 ### Basic Usage
 
@@ -81,7 +81,7 @@ python convert_chat_export.py conversations.json -o my_conversations
 python convert_chat_export.py --help
 ```
 
-## 📄 Output Format
+## Output Format
 
 Generated Markdown files include:
 
@@ -137,7 +137,7 @@ This creates a new virtual environment in a directory called `myenv`.
 ---
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Project Structure
 
@@ -171,7 +171,7 @@ mlstudio/
    - Filename sanitization
    - File writing
 
-## 🔧 Extending for Other Services
+## Extending for Other Services
 
 The tool is designed to be extensible. To add support for a new chat service:
 
@@ -209,7 +209,7 @@ def detect_format(self) -> Optional[str]:
 
 Add a new method like `_convert_claude()` following the pattern of `_convert_chatgpt()`.
 
-## 📋 ChatGPT Export Format Reference
+## ChatGPT Export Format Reference
 
 ChatGPT exports use the following JSON structure:
 
@@ -270,7 +270,7 @@ ChatGPT exports use the following JSON structure:
   - **`message.content.parts`**: Array of content strings
   - **`message.create_time`**: Message timestamp
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### "Unknown chat export format"
 - Verify you're using a supported format (currently ChatGPT)
@@ -289,7 +289,7 @@ ChatGPT exports use the following JSON structure:
 - Make sure you're running the script from the `mlstudio/` directory
 - Or ensure `chatgpt_parser.py` is in the same directory as `convert_chat_export.py`
 
-## 🤝 Contributing
+## Contributing
 
 To extend this tool:
 
@@ -299,14 +299,19 @@ To extend this tool:
 4. Implement batch processing for multiple files
 5. Add export to other formats (HTML, PDF, etc.)
 
-## 📝 License
+## Requirements
+
+- Python 3.7+
+- No external dependencies (uses standard library only)
+
+## License
 
 This tool is part of the stunts repository. See the repository's main LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Created as part of the MLStudio toolkit for AI chat management and analysis.
 
 ---
 
-**Happy Converting! 🚀**
+**Happy Converting!**

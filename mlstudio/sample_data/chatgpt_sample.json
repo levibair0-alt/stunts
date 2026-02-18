@@ -1,0 +1,136 @@
+[
+  {
+    "title": "Python Programming Basics",
+    "create_time": 1705314600.0,
+    "update_time": 1705318200.0,
+    "mapping": {
+      "msg-001": {
+        "id": "msg-001",
+        "message": {
+          "id": "msg-001",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1705314600.0,
+          "content": {
+            "content_type": "text",
+            "parts": ["Can you explain how to create a Python list and add items to it?"]
+          }
+        },
+        "parent": null
+      },
+      "msg-002": {
+        "id": "msg-002",
+        "message": {
+          "id": "msg-002",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1705314615.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Of course! Creating and working with lists in Python is straightforward. Here's how to do it:\n\n1. **Creating a list:**",
+              {
+                "content_type": "code",
+                "language": "python",
+                "text": "# Create an empty list\nmy_list = []\n\n# Create a list with initial values\nnumbers = [1, 2, 3, 4, 5]\nfruits = ['apple', 'banana', 'orange']"
+              },
+              "2. **Adding items to a list:**",
+              {
+                "content_type": "code",
+                "language": "python",
+                "text": "# Using append() - adds to the end\nnumbers.append(6)\nprint(numbers)  # [1, 2, 3, 4, 5, 6]\n\n# Using insert() - adds at specific position\nnumbers.insert(0, 0)\nprint(numbers)  # [0, 1, 2, 3, 4, 5, 6]\n\n# Using extend() - adds multiple items\nmore_numbers = [7, 8, 9]\nnumbers.extend(more_numbers)\nprint(numbers)  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]"
+              },
+              "Lists are mutable, meaning you can modify them after creation. They're one of Python's most versatile data structures!"
+            ]
+          }
+        },
+        "parent": "msg-001"
+      },
+      "msg-003": {
+        "id": "msg-003",
+        "message": {
+          "id": "msg-003",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1705314800.0,
+          "content": {
+            "content_type": "text",
+            "parts": ["Can you show me how to remove items from a list?"]
+          }
+        },
+        "parent": "msg-002"
+      },
+      "msg-004": {
+        "id": "msg-004",
+        "message": {
+          "id": "msg-004",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1705314820.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Absolutely! There are several ways to remove items from a Python list:",
+              {
+                "content_type": "code",
+                "language": "python",
+                "text": "# Remove by value (removes first occurrence)\nnumbers = [1, 2, 3, 2, 4]\nnumbers.remove(2)\nprint(numbers)  # [1, 3, 2, 4]\n\n# Remove by index\nnumbers = [1, 2, 3, 4]\nremoved = numbers.pop(2)  # Removes element at index 2\nprint(numbers)   # [1, 2, 4]\nprint(removed)   # 3\n\n# pop() without argument removes last item\nlast = numbers.pop()\nprint(numbers)   # [1, 2]\nprint(last)      # 4"
+              },
+              "Choose the method that best fits your use case!"
+            ]
+          }
+        },
+        "parent": "msg-003"
+      }
+    }
+  },
+  {
+    "title": "Data Analysis with Pandas",
+    "create_time": 1705315000.0,
+    "update_time": 1705315600.0,
+    "mapping": {
+      "msg-005": {
+        "id": "msg-005",
+        "message": {
+          "id": "msg-005",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1705315000.0,
+          "content": {
+            "content_type": "text",
+            "parts": ["How do I read a CSV file and filter rows in Pandas?"]
+          }
+        },
+        "parent": null
+      },
+      "msg-006": {
+        "id": "msg-006",
+        "message": {
+          "id": "msg-006",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1705315020.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Here's how to read a CSV file and filter rows using Pandas:",
+              {
+                "content_type": "code",
+                "language": "python",
+                "text": "import pandas as pd\n\n# Read CSV file\ndf = pd.read_csv('data.csv')\n\n# View first few rows\nprint(df.head())\n\n# Filter rows where column value meets a condition\nfiltered_df = df[df['age'] > 25]\n\n# Filter with multiple conditions\nfiltered_df = df[(df['age'] > 25) & (df['city'] == 'New York')]\n\n# Filter using isin()\ncities_of_interest = ['New York', 'Los Angeles', 'Chicago']\nfiltered_df = df[df['city'].isin(cities_of_interest)]"
+              },
+              "These filtering operations return new DataFrames, leaving the original unchanged."
+            ]
+          }
+        },
+        "parent": "msg-005"
+      }
+    }
+  }
+]
