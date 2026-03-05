@@ -1,0 +1,139 @@
+# Pipeline Contract YAML Schema
+# This schema defines the structure for pipeline Intermediate Representation (IR)
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: PipelineContract
+description: Stable Intermediate Representation for a pipeline
+type: object
+required:
+  - id
+  - name
+  - stages
+properties:
+  id:
+    type: string
+    description: Unique pipeline identifier
+    pattern: "^[a-zA-Z0-9_-]+$"
+    minLength: 1
+    maxLength: 100
+
+  name:
+    type: string
+    description: Pipeline name
+    minLength: 1
+    maxLength: 255
+
+  description:
+    type: string
+    maxLength: 500
+    default: null
+
+  version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+    default: "1.0.0"
+
+  stages:
+    type: array
+    description: Pipeline stages
+    items:
+      type: object
+      required:
+        - name
+        - adapter_name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        adapter_name:
+          type: string
+        adapter_config:
+          type: object
+          default: {}
+        input_transform:
+          type: object
+          default: null
+        output_transform:
+          type: object
+          default: null
+        depends_on:
+          type: array
+          items:
+            type: string
+          default: []
+        status:
+          type: string
+          enum: [pending, running, completed, failed, skipped]
+          default: pending
+        error:
+          type: string
+          default: null
+        started_at:
+          type: string
+          format: date-time
+          default: null
+        completed_at:
+          type: string
+          format: date-time
+          default: null
+    minItems: 1
+
+  input_schema:
+    type: object
+    description: Input JSON schema
+    default: {}
+
+  output_schema:
+    type: object
+    description: Output JSON schema
+    default: {}
+
+  metadata:
+    type: object
+    description: Pipeline metadata
+    default: {}
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+# Stage Contract (embedded)
+$defs:
+  StageContract:
+    type: object
+    required:
+      - name
+      - adapter_name
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 100
+      adapter_name:
+        type: string
+      adapter_config:
+        type: object
+      input_transform:
+        type: object
+      output_transform:
+        type: object
+      depends_on:
+        type: array
+        items:
+          type: string
+      status:
+        type: string
+        enum: [pending, running, completed, failed, skipped]
+      error:
+        type: string
+      started_at:
+        type: string
+        format: date-time
+      completed_at:
+        type: string
+        format: date-time
