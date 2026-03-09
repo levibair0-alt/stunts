@@ -1,0 +1,9 @@
+# Demo commands for voice_control --demo mode
+# These commands are simulated in sequence when running with --demo flag
+
+Athena show me opportunities
+Athena generate offer for freelancers
+Athena verify last session
+Athena audit status
+Athena emergency stop
+Resume Athena operations
