@@ -74,13 +74,9 @@ class VoiceConfig:
         ]
     )
 
-    def __init__(self, config_path: Optional[str] = None):
-        """Initialize config with optional file loading."""
-        self._config_path: Optional[str] = config_path
-        self._last_modified: float = 0
-
-        if config_path and os.path.exists(config_path):
-            self.load_from_file(config_path)
+    # Internal state (not part of dataclass fields)
+    _config_path: Optional[str] = field(default=None, repr=False)
+    _last_modified: float = field(default=0.0, repr=False)
 
     def load_from_file(self, path: str) -> None:
         """Load configuration from JSON file."""

@@ -8,8 +8,15 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Optional, Set
 
-import websockets
-from websockets.server import WebSocketServerProtocol
+try:
+    import websockets
+    from websockets.server import WebSocketServerProtocol
+
+    HAS_WEBSOCKETS = True
+except ImportError:
+    HAS_WEBSOCKETS = False
+    websockets = None
+    WebSocketServerProtocol = None
 
 
 class BroadcastType(Enum):
@@ -61,9 +68,21 @@ class VoiceWebSocketServer:
         self._clients: Set[WebSocketServerProtocol] = set()
         self._server = None
         self._running = False
+        self._fallback_mode = not HAS_WEBSOCKETS
+
+        if self._fallback_mode:
+            print("⚠️  websockets not installed - running in fallback mode (console output only)")
 
     async def start(self) -> None:
         """Start the WebSocket server."""
+        if self._fallback_mode:
+            self._running = True
+            print(f"🔌 WebSocket server (fallback mode) on port {self.port}")
+            return
+
+        if websockets is None:
+            raise RuntimeError("websockets library not installed")
+
         self._server = await websockets.serve(
             self._handle_client,
             self.host,
@@ -74,6 +93,11 @@ class VoiceWebSocketServer:
 
     async def stop(self) -> None:
         """Stop the WebSocket server."""
+        if self._fallback_mode:
+            self._running = False
+            print("🔌 WebSocket server stopped")
+            return
+
         if self._server:
             self._server.close()
             await self._server.wait_closed()
@@ -87,6 +111,9 @@ class VoiceWebSocketServer:
 
     async def _handle_client(self, websocket: WebSocketServerProtocol, path: str) -> None:
         """Handle a new client connection."""
+        if self._fallback_mode or websockets is None:
+            return
+
         self._clients.add(websocket)
         print(f"🔌 Client connected. Total clients: {len(self._clients)}")
 
@@ -110,6 +137,9 @@ class VoiceWebSocketServer:
         self, websocket: WebSocketServerProtocol, message: str
     ) -> None:
         """Handle incoming message from client."""
+        if self._fallback_mode:
+            return
+
         try:
             data = json.loads(message)
             msg_type = data.get("type")
@@ -125,9 +155,6 @@ class VoiceWebSocketServer:
 
     async def _broadcast(self, msg_type: str, payload: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
-        if not self._clients:
-            return
-
         from datetime import datetime
 
         message = BroadcastMessage(
@@ -135,6 +162,14 @@ class VoiceWebSocketServer:
             payload=payload,
             timestamp=datetime.now().isoformat(),
         )
+
+        # In fallback mode, just print to console
+        if self._fallback_mode:
+            print(f"📡 [{msg_type}] {payload}")
+            return
+
+        if not self._clients or websockets is None:
+            return
 
         json_message = message.to_json()
 

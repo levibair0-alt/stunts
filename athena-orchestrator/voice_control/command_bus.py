@@ -114,10 +114,10 @@ class AuditLogger:
                 (
                     datetime.now().isoformat(),
                     transcript,
-                    intent.value,
+                    intent.value if hasattr(intent, 'value') else intent,
                     confidence,
                     json.dumps(parameters),
-                    status.value,
+                    status.value if hasattr(status, 'value') else status,
                     output,
                     error,
                     duration_ms,

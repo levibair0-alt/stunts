@@ -41,7 +41,9 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        config = VoiceConfig(config_path=args.config)
+        config = VoiceConfig()
+        if args.config:
+            config.load_from_file(args.config)
         if args.port:
             config.websocket_port = args.port
 
