@@ -147,12 +147,13 @@ class EmergencyStopProtocol:
         # 3. Write immutable audit entry
         audit_entry_id = None
         if self.audit_logger:
+            from .command_bus import ExecutionStatus
             audit_entry_id = self.audit_logger.log_command(
                 transcript=transcript or "Emergency stop activated",
-                intent_type="EMERGENCY_STOP",
+                intent="EMERGENCY_STOP",
                 confidence=1.0,
                 parameters={"trigger": "voice_command", "transcript": transcript},
-                status="blocked",
+                status=ExecutionStatus.BLOCKED,
                 output="EMERGENCY STOP ACTIVATED",
                 triggered_engine=None,
             )
@@ -197,12 +198,13 @@ class EmergencyStopProtocol:
 
         # Log resume event
         if self.audit_logger:
+            from .command_bus import ExecutionStatus
             self.audit_logger.log_command(
                 transcript=transcript or "Resume operations",
-                intent_type="RESUME",
+                intent="RESUME",
                 confidence=1.0,
                 parameters={"trigger": "voice_command", "transcript": transcript},
-                status="success",
+                status=ExecutionStatus.SUCCESS,
                 output="System resumed from emergency stop",
                 triggered_engine=None,
             )

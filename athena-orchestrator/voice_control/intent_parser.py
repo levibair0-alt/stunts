@@ -155,6 +155,7 @@ class IntentParser:
         """
         self.confidence_execute = confidence_execute
         self.confidence_clarify = confidence_clarify
+        self.confidence_reject = 0.0
         self.safe_mode_enabled = safe_mode_enabled
 
         # Compile patterns
